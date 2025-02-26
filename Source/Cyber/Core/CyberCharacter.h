@@ -371,6 +371,8 @@ public:
 	UFUNCTION()
 	void OnGameSavedEvent();
 
+	void BindSaveGameDelegatesInPlayerState();
+
 
 protected:
 	// APawn interface

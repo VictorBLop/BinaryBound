@@ -55,6 +55,9 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void ResetPlayerDeathState(bool isCharacterDead);
 
+	/* Game Save/Load Elements */
+	void BindSaveLoadGameDelegates();
+
 protected:
 
 	virtual void BeginPlay() override;

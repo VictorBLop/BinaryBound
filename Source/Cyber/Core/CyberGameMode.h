@@ -5,6 +5,8 @@
 #include "..\Enemy\CyberEnemySpawner.h"
 #include "CyberGameMode.generated.h"
 
+class ACyberPlayerController;
+
 UCLASS()
 class CYBER_API ACyberGameMode : public AGameMode
 {
@@ -22,7 +24,21 @@ public:
 	void ActivateEnemySpawner();
 
 	ACyberEnemySpawner* EnemySpawner = nullptr;
-	
+
+	/* Local Multiplayer Widgets */
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Widget | Local Multiplayer")
+	TArray<TSubclassOf<UUserWidget>> LocalPlayerInfoWidgetClasses;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Widget | Local Multiplayer")
+	TSubclassOf<UUserWidget> SharedInfoWidgetClass;
+
+	UFUNCTION(BlueprintCallable)
+	TSubclassOf<UUserWidget> GetLocalPlayerWidgetClass(AController* controller);
+
+	UFUNCTION(BlueprintCallable)
+	TSubclassOf<UUserWidget> GetSharedInfoWidgetClass();
+
 protected:
 
 	int32 ColorsIndex = 0;
@@ -30,4 +46,7 @@ protected:
 	virtual void StartPlay() override;
 
 	ACyberEnemySpawner* FindEnemySpawner();
+
+	int32 PlayerIndex = 0;
+
 };

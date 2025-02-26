@@ -8,6 +8,7 @@
 #include "..\Interfaces/Saveable.h"
 #include "OnlineSubsystem.h"
 #include "Interfaces/OnlineIdentityInterface.h"
+#include "..\CyberSessionSubsystem.h"
 
 void UCyberGameInstance::CreateSaveGame()
 {
@@ -61,13 +62,15 @@ void UCyberGameInstance::OnLoginCompleted(int NumberOfPlayers, bool WasSuccessfu
 
 void UCyberGameInstance::SaveGame(bool Async)
 {
+	FString NewSlotName = GetSlotName(IsLocalMatch());
+
 	if (Async)
 	{
-		UGameplayStatics::AsyncSaveGameToSlot(CyberSaveGame, SlotName, UserIndex, FAsyncSaveGameToSlotDelegate::CreateUObject(this, &ThisClass::OnAsyncSaveGameToSlot));
+		UGameplayStatics::AsyncSaveGameToSlot(CyberSaveGame, NewSlotName, UserIndex, FAsyncSaveGameToSlotDelegate::CreateUObject(this, &ThisClass::OnAsyncSaveGameToSlot));
 	}
 	else
 	{
-		if (UGameplayStatics::SaveGameToSlot(CyberSaveGame, SlotName, UserIndex))
+		if (UGameplayStatics::SaveGameToSlot(CyberSaveGame, NewSlotName, UserIndex))
 		{
 			OnGameSaved.Broadcast();
 		}
@@ -83,17 +86,40 @@ void UCyberGameInstance::OnAsyncSaveGameToSlot(const FString& slotName, const in
 	}
 }
 
+bool UCyberGameInstance::IsLocalMatch()
+{
+	return GetSubsystem<UCyberSessionSubsystem>()->bIsLocalMatch;
+}
+
+FString UCyberGameInstance::GetSlotName(bool bIsLocalMatch)
+{
+	FString newSlotName = TEXT("ERROR");
+
+	if (bIsLocalMatch)
+	{
+		newSlotName = LocalMultiplayerSlot;
+	}
+	else
+	{
+		newSlotName = SlotName;
+	}
+
+	return newSlotName;
+}
+
 void UCyberGameInstance::LoadGame(bool Async)
 {
-	if (UGameplayStatics::DoesSaveGameExist(SlotName, UserIndex))
+	FString NewSlotName = GetSlotName(IsLocalMatch());
+
+	if (UGameplayStatics::DoesSaveGameExist(NewSlotName, UserIndex))
 	{
 		if (Async)
 		{
-			UGameplayStatics::AsyncLoadGameFromSlot(SlotName, UserIndex, FAsyncLoadGameFromSlotDelegate::CreateUObject(this, &ThisClass::OnAsyncLoadGameFromSlot));
+			UGameplayStatics::AsyncLoadGameFromSlot(NewSlotName, UserIndex, FAsyncLoadGameFromSlotDelegate::CreateUObject(this, &ThisClass::OnAsyncLoadGameFromSlot));
 		}
 		else
 		{
-			if (UCyberSaveGame* saveGameReference = Cast<UCyberSaveGame>(UGameplayStatics::LoadGameFromSlot(SlotName, UserIndex)))
+			if (UCyberSaveGame* saveGameReference = Cast<UCyberSaveGame>(UGameplayStatics::LoadGameFromSlot(NewSlotName, UserIndex)))
 			{
 				CyberSaveGame = saveGameReference;
 

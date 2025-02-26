@@ -1,6 +1,9 @@
 #include "CyberGameMode.h"
 #include "CyberGameState.h"
 #include "Kismet/GameplayStatics.h"
+#include "CyberPlayerController.h"
+#include "CyberPlayerState.h"
+#include "CyberGameState.h"
 
 void ACyberGameMode::SetColorsIndex(int32 newColorsIndex)
 {
@@ -20,6 +23,34 @@ void ACyberGameMode::PostLogin(APlayerController* NewPlayer)
 	{
 		CyberGameState->PlayerJoined();
 	}
+}
+
+TSubclassOf<UUserWidget> ACyberGameMode::GetLocalPlayerWidgetClass(AController* controller)
+{
+	APlayerState* PlayerState = controller->GetPlayerState<APlayerState>();
+
+	if (!PlayerState)
+	{
+		return nullptr;
+	}
+
+	if (GetWorld()->GetGameState())
+	{
+		for (int32 i = 0; i < GetWorld()->GetGameState()->PlayerArray.Num(); i++)
+		{
+			if (PlayerState == GetWorld()->GetGameState()->PlayerArray[i])
+			{
+				return LocalPlayerInfoWidgetClasses[i%2];
+			}
+		}
+	}
+
+	return nullptr;
+}
+
+TSubclassOf<UUserWidget> ACyberGameMode::GetSharedInfoWidgetClass()
+{
+	return SharedInfoWidgetClass;
 }
 
 void ACyberGameMode::StartPlay()

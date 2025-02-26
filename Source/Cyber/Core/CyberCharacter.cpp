@@ -209,6 +209,8 @@ void ACyberCharacter::PossessedBy(AController* NewController)
 {
 	Super::PossessedBy(NewController);
 
+	BindSaveGameDelegatesInPlayerState();
+
 	SetupMaterialColors();
 
 	SetupGameplayAbilitySystemComponent();
@@ -221,6 +223,12 @@ void ACyberCharacter::PossessedBy(AController* NewController)
 
 	//Add Input Mapping Context
 	AddMappingContextCharacter(NewController);
+
+	if (UCyberGameInstance* CyberGameInstance = Cast<UCyberGameInstance>(GetGameInstance()))
+	{
+		CyberGameInstance->OnGameLoaded.AddDynamic(this, &ThisClass::OnGameLoadedEvent);
+		CyberGameInstance->OnGameSaved.AddDynamic(this, &ThisClass::OnGameSavedEvent);
+	}
 }
 
 void ACyberCharacter::AddMappingContextCharacter(AController* newController)
@@ -252,13 +260,12 @@ void ACyberCharacter::OnRep_PlayerState()
 	else
 	{
 		// On the ocasion the Player Controller replicates after the Player State to fix the Controller reference inside the Ability System.
-
 		GASAbilitySystemComponent->RefreshAbilityActorInfo();
 	}
 
 	SetupMaterialColors();
 
-	// 
+	// Alert Game State that a player joined.
 	if (ACyberGameState* CyberGameState = Cast<ACyberGameState>(UGameplayStatics::GetGameState(GetWorld())))
 	{
 		CyberGameState->PlayerJoined();
@@ -631,6 +638,14 @@ void ACyberCharacter::OnGameSavedEvent()
 	// Event just in case it is needed.
 }
 
+void ACyberCharacter::BindSaveGameDelegatesInPlayerState()
+{
+	if (ACyberPlayerState* CyberPlayerState = GetPlayerState<ACyberPlayerState>())
+	{
+		CyberPlayerState->BindSaveLoadGameDelegates();
+	}
+}
+
 void ACyberCharacter::BeginPlay()
 {
 	// Call the base class  
@@ -638,12 +653,6 @@ void ACyberCharacter::BeginPlay()
 
 	//Add Input Mapping Context
 	AddMappingContextCharacter(Controller);
-
-	if (UCyberGameInstance* CyberGameInstance = Cast<UCyberGameInstance>(GetGameInstance()))
-	{
-		CyberGameInstance->OnGameLoaded.AddDynamic(this, &ThisClass::OnGameLoadedEvent);
-		CyberGameInstance->OnGameSaved.AddDynamic(this, &ThisClass::OnGameSavedEvent);
-	}
 }
 
 void ACyberCharacter::Tick(float DeltaTime)

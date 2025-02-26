@@ -19,6 +19,10 @@ class CYBER_API ACyberPlayerController : public APlayerController
 	
 protected:
 
+	/* DEBUG */
+	UPROPERTY(EditAnywhere)
+	bool IsLocalMatch = false;
+
 	ACyberPlayerController();
 	UFUNCTION()
 	void ApplyStun(bool Apply);
@@ -29,12 +33,21 @@ protected:
 
 	virtual void OnRep_PlayerState() override;
 
-	/* Timer Elements */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Widget | Timer")
-	TSubclassOf<UUserWidget> PlayerInfoWidgetClass;
+	/* Local Multiplayer Widgets */
 
 	UPROPERTY()
-	UUserWidget* PlayerInfoWidget = nullptr;
+	UUserWidget* LocalPlayerInfoWidget = nullptr;
+
+	UPROPERTY()
+	UUserWidget* SharedInfoWidget = nullptr;
+
+	/* Online Multiplayer Widgets */
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Widget | Online Multiplayer")
+	TSubclassOf<UUserWidget> OnlinePlayerInfoWidgetClass;
+
+	UPROPERTY()
+	UUserWidget* OnlinePlayerInfoWidget = nullptr;
 
 	/* Indicator for Other Player position */
 
