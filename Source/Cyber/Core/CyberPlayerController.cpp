@@ -8,6 +8,9 @@
 #include "Blueprint/WidgetLayoutLibrary.h"
 #include "CyberGameState.h"
 #include "Kismet/GameplayStatics.h"
+#include "..\CyberSessionSubsystem.h"
+#include "CyberGameInstance.h"
+#include "CyberGameMode.h"
 
 ACyberPlayerController::ACyberPlayerController()
 {
@@ -71,7 +74,7 @@ void ACyberPlayerController::ShowPreGameTimer()
 			if (!PreGameTimerWidget)
 			{
 				PreGameTimerWidget = CreateWidget(this, PreGameTimerWidgetClass);
-				PreGameTimerWidget->AddToPlayerScreen();
+				PreGameTimerWidget->AddToViewport();
 
 				SetIgnoreMoveInput(true);
 			}
@@ -102,19 +105,63 @@ void ACyberPlayerController::ShowPlayerInfo()
 {
 	if (IsLocalController())
 	{
-		if (PlayerInfoWidgetClass)
+		UCyberGameInstance* CyberGameInstance = Cast<UCyberGameInstance>(GetGameInstance());
+
+		if (!CyberGameInstance)
 		{
-			if(!PlayerInfoWidget)
+			return;
+		}
+
+		if (!CyberGameInstance->IsLocalMatch())
+		{
+			// Is Online Match
+			if (OnlinePlayerInfoWidgetClass)
 			{
-				PlayerInfoWidget = CreateWidget(this, PlayerInfoWidgetClass);
-				PlayerInfoWidget->AddToPlayerScreen();
+				if (!OnlinePlayerInfoWidget)
+				{
+					OnlinePlayerInfoWidget = CreateWidget(this, OnlinePlayerInfoWidgetClass);
+					OnlinePlayerInfoWidget->AddToPlayerScreen();
+				}
+			}
+		}
+		else // Is Local Match
+		{
+			ACyberGameMode* CyberGameMode = Cast<ACyberGameMode>(UGameplayStatics::GetGameMode(GetWorld()));
+
+			if (!CyberGameMode)
+			{
+				return;
 			}
 
-			SetInputMode(FInputModeGameOnly());
-			SetShowMouseCursor(false);
-			
-			ResetIgnoreMoveInput();
+			TSubclassOf<UUserWidget> LocalPlayerInfoWidgetClass = CyberGameMode->GetLocalPlayerWidgetClass(this);
+
+			// Is Local Match
+			if (LocalPlayerInfoWidgetClass)
+			{
+				if (!LocalPlayerInfoWidget)
+				{
+					LocalPlayerInfoWidget = CreateWidget(this, LocalPlayerInfoWidgetClass);
+					LocalPlayerInfoWidget->AddToPlayerScreen();
+				}
+			}
+
+			if (CyberGameMode->GetSharedInfoWidgetClass())
+			{
+				if(GetLocalPlayer()->IsPrimaryPlayer())
+				{
+					if (!SharedInfoWidget)
+					{
+						SharedInfoWidget = CreateWidget(this, CyberGameMode->GetSharedInfoWidgetClass());
+						SharedInfoWidget->AddToViewport();
+					}
+				}
+			}
 		}
+
+		SetInputMode(FInputModeGameOnly());
+		SetShowMouseCursor(false);
+
+		ResetIgnoreMoveInput();
 	}
 }
 
@@ -125,31 +172,66 @@ void ACyberPlayerController::RemovePlayerInfo()
 		return;
 	}
 
-	if (!PlayerInfoWidget)
+	if (!OnlinePlayerInfoWidget && !SharedInfoWidget)
 	{
 		return;
 	}
 
-	if (PlayerInfoWidget->IsInViewport())
+	if(OnlinePlayerInfoWidget)
 	{
-		PlayerInfoWidget->RemoveFromParent();
-		PlayerInfoWidget = nullptr;
+		if (OnlinePlayerInfoWidget->IsInViewport()) // Online Match
+		{
+			OnlinePlayerInfoWidget->RemoveFromParent();
+			OnlinePlayerInfoWidget = nullptr;
+		}
 	}
+	else if(SharedInfoWidget)
+	{
+		if (SharedInfoWidget->IsInViewport()) // Local Match
+		{
+			SharedInfoWidget->RemoveFromParent();
+			SharedInfoWidget = nullptr;
 
+			if(LocalPlayerInfoWidget)
+			{
+				LocalPlayerInfoWidget->RemoveFromParent();
+				LocalPlayerInfoWidget = nullptr;
+			}
+		}
+	}
 }
 
 void ACyberPlayerController::ShowGameOverScreen()
 {
 	if (IsLocalController())
 	{
-		if (GameOverWidgetClass && PlayerInfoWidget)
+		if (GameOverWidgetClass)
 		{
-			if (PlayerInfoWidget->IsInViewport())
+			if(OnlinePlayerInfoWidget)
 			{
-				PlayerInfoWidget->RemoveFromParent();
-				PlayerInfoWidget = nullptr;
+				if (OnlinePlayerInfoWidget->IsInViewport()) // Online Match
+				{
+					OnlinePlayerInfoWidget->RemoveFromParent();
+					OnlinePlayerInfoWidget = nullptr;
+				}
+			}
+			else if (LocalPlayerInfoWidget) // Local Match
+			{
+				// Remove Widget which belongs only to Player
+				LocalPlayerInfoWidget->RemoveFromParent();
+				LocalPlayerInfoWidget = nullptr;
+
+				if (SharedInfoWidget) // Remove Widget of Shared info between players
+				{
+					if (SharedInfoWidget->IsInViewport()) 
+					{
+						SharedInfoWidget->RemoveFromParent();
+						SharedInfoWidget = nullptr;
+					}
+				}
 			}
 
+			// Add to Player Screen the Game Over widget
 			if(!GameOverWidget)
 			{
 				GameOverWidget = CreateWidget(this, GameOverWidgetClass);

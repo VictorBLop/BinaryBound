@@ -35,6 +35,15 @@ void ACyberPlayerState::ResetPlayerDeathState(bool isCharacterDead)
     bIsCharacterDead = isCharacterDead;
 }
 
+void ACyberPlayerState::BindSaveLoadGameDelegates()
+{
+    if (UCyberGameInstance* CyberGameInstance = Cast<UCyberGameInstance>(GetGameInstance()))
+    {
+        CyberGameInstance->OnGameLoaded.AddDynamic(this, &ThisClass::OnGameLoadedEvent);
+        CyberGameInstance->OnGameSaved.AddDynamic(this, &ThisClass::OnGameSavedEvent);
+    }
+}
+
 void ACyberPlayerState::BeginPlay()
 {
     Super::BeginPlay();
@@ -43,12 +52,6 @@ void ACyberPlayerState::BeginPlay()
     if (ACyberGameState* CyberGameState = Cast<ACyberGameState>(UGameplayStatics::GetGameState(GetWorld())))
     {
         CyberGameState->ApplyEffectOnAllPlayers.AddDynamic(this, &ThisClass::ApplyGameplayEffectPlayerStateFromDelegate);
-    }
-
-    if (UCyberGameInstance* CyberGameInstance = Cast<UCyberGameInstance>(GetGameInstance()))
-    {
-        CyberGameInstance->OnGameLoaded.AddDynamic(this, &ThisClass::OnGameLoadedEvent);
-        CyberGameInstance->OnGameSaved.AddDynamic(this, &ThisClass::OnGameSavedEvent);
     }
 }
 

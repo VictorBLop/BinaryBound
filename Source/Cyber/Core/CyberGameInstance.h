@@ -63,11 +63,17 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void CreateSaveGame();
-
+	 
 	void OnAsyncLoadGameFromSlot(const FString& slotName, const int32 userIndex, USaveGame* saveGameRef);
 
 	void OnAsyncSaveGameToSlot(const FString& slotName, const int32 userIndex, bool Success);
 
+	/* Cyber Session Subsystem */
+	UFUNCTION(BlueprintCallable)
+	bool IsLocalMatch();
+
+	/* Get Slot Name */
+	FString GetSlotName(bool bIsLocalMatch);
 
 protected:
 
@@ -75,6 +81,8 @@ protected:
 	TObjectPtr<UCyberSaveGame> CyberSaveGame = nullptr;
 
 	const FString SlotName = TEXT("Slot_01");
+
+	const FString LocalMultiplayerSlot = TEXT("Slot_LocalMatch_01");
 
 	const int32 UserIndex = 0;
 
